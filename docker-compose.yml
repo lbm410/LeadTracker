@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: leadtracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-leadtracker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-leadtracker}
+      POSTGRES_DB: ${POSTGRES_DB:-leadtracker}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-leadtracker} -d ${POSTGRES_DB:-leadtracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build: ./backend
+    container_name: leadtracker-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-leadtracker}:${POSTGRES_PASSWORD:-leadtracker}@db:5432/${POSTGRES_DB:-leadtracker}
+      API_KEY: ${API_KEY:-dev-local-key-change-me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      COLD_LEAD_DAYS: ${COLD_LEAD_DAYS:-7}
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+  web:
+    build: ./frontend
+    container_name: leadtracker-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Reachable from the browser, so it points at the host-mapped API port.
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+      # Kept in sync with the API key so the app authenticates out of the box.
+      VITE_API_KEY: ${API_KEY:-dev-local-key-change-me}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+
+volumes:
+  pgdata:
