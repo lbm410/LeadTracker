@@ -79,7 +79,8 @@ def create_event(db: Session, payload: EventCreate) -> Event:
 
     db.commit()
     db.refresh(event)
-    return event
+    # Re-fetch with the contact eagerly loaded for clean serialization.
+    return get_event_or_404(db, event.id)
 
 
 def update_event(db: Session, event_id: uuid.UUID, payload: EventUpdate) -> Event:
@@ -91,7 +92,7 @@ def update_event(db: Session, event_id: uuid.UUID, payload: EventUpdate) -> Even
         setattr(event, field, value)
     db.commit()
     db.refresh(event)
-    return event
+    return get_event_or_404(db, event.id)
 
 
 def delete_event(db: Session, event_id: uuid.UUID) -> None:
