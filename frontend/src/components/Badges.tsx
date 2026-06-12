@@ -1,13 +1,13 @@
-import { Badge } from './ui'
+import { useI18n } from '../i18n'
 import {
-  CHANNEL_META,
-  DIRECTION_META,
-  EVENT_STATUS_META,
-  EVENT_TYPE_META,
-  INTERACTION_TYPE_META,
-  PRIORITY_META,
-  SOURCE_META,
-  STATUS_META,
+  CHANNEL_STYLES,
+  DIRECTION_STYLES,
+  EVENT_STATUS_STYLES,
+  EVENT_TYPE_STYLES,
+  INTERACTION_TYPE_STYLES,
+  PRIORITY_STYLES,
+  SOURCE_STYLES,
+  STATUS_STYLES,
 } from '../lib/constants'
 import type {
   ContactSource,
@@ -19,50 +19,51 @@ import type {
   InteractionType,
   Priority,
 } from '../types'
+import { Badge } from './ui'
 
 export function StatusBadge({ status }: { status: ContactStatus }) {
-  const meta = STATUS_META[status]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={STATUS_STYLES[status]}>{t(`enum.status.${status}`)}</Badge>
 }
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
-  const meta = PRIORITY_META[priority]
+  const { t } = useI18n()
   const dot =
     priority === 'high' ? 'bg-rose-500' : priority === 'medium' ? 'bg-amber-500' : 'bg-slate-400'
   return (
-    <Badge className={meta.badge}>
+    <Badge className={PRIORITY_STYLES[priority]}>
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-      {meta.label}
+      {t(`enum.priority.${priority}`)}
     </Badge>
   )
 }
 
 export function SourceBadge({ source }: { source: ContactSource }) {
-  const meta = SOURCE_META[source]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={SOURCE_STYLES[source]}>{t(`enum.source.${source}`)}</Badge>
 }
 
 export function ChannelBadge({ channel }: { channel: InteractionChannel }) {
-  const meta = CHANNEL_META[channel]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={CHANNEL_STYLES[channel]}>{t(`enum.channel.${channel}`)}</Badge>
 }
 
 export function DirectionBadge({ direction }: { direction: InteractionDirection }) {
-  const meta = DIRECTION_META[direction]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={DIRECTION_STYLES[direction]}>{t(`enum.direction.${direction}`)}</Badge>
 }
 
 export function InteractionTypeBadge({ type }: { type: InteractionType }) {
-  const meta = INTERACTION_TYPE_META[type]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={INTERACTION_TYPE_STYLES[type]}>{t(`enum.interaction_type.${type}`)}</Badge>
 }
 
 export function EventTypeBadge({ type }: { type: EventType }) {
-  const meta = EVENT_TYPE_META[type]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={EVENT_TYPE_STYLES[type]}>{t(`enum.event_type.${type}`)}</Badge>
 }
 
 export function EventStatusBadge({ status }: { status: EventStatus }) {
-  const meta = EVENT_STATUS_META[status]
-  return <Badge className={meta.badge}>{meta.label}</Badge>
+  const { t } = useI18n()
+  return <Badge className={EVENT_STATUS_STYLES[status]}>{t(`enum.event_status.${status}`)}</Badge>
 }

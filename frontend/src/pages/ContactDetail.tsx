@@ -38,10 +38,12 @@ import { ContactForm } from '../components/ContactForm'
 import { EventForm } from '../components/EventForm'
 import { InteractionForm } from '../components/InteractionForm'
 import { Button, Card, EmptyState, ErrorState, LoadingState, Modal, Select } from '../components/ui'
-import { STATUS_OPTIONS } from '../lib/constants'
+import { optionsFor, useI18n } from '../i18n'
+import { STATUS_VALUES } from '../lib/constants'
 import { formatDate, formatDateTime, fromNow, initials } from '../lib/utils'
 
 export function ContactDetail() {
+  const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
@@ -65,8 +67,8 @@ export function ContactDetail() {
   if (isError || !contact)
     return (
       <div className="space-y-4">
-        <BackLink />
-        <ErrorState message={errorMessage(error, 'Contact not found')} />
+        <BackLink label={t('common.back_to_contacts')} />
+        <ErrorState message={errorMessage(error, t('detail.not_found'))} />
       </div>
     )
 
@@ -76,9 +78,8 @@ export function ContactDetail() {
 
   return (
     <div className="space-y-6">
-      <BackLink />
+      <BackLink label={t('common.back_to_contacts')} />
 
-      {/* Header card */}
       <Card className="p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
@@ -88,7 +89,7 @@ export function ContactDetail() {
             <div>
               <h1 className="text-xl font-bold text-slate-900">{contact.full_name}</h1>
               <p className="text-sm text-slate-500">
-                {[contact.role, contact.company].filter(Boolean).join(' · ') || 'No company'}
+                {[contact.role, contact.company].filter(Boolean).join(' · ') || t('detail.no_company')}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <StatusBadge status={contact.status} />
@@ -99,13 +100,13 @@ export function ContactDetail() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => setInteractionOpen(true)}>
-              <MessageSquarePlus className="h-4 w-4" /> Log interaction
+              <MessageSquarePlus className="h-4 w-4" /> {t('detail.log_interaction')}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setEventOpen(true)}>
-              <CalendarPlus className="h-4 w-4" /> Schedule
+              <CalendarPlus className="h-4 w-4" /> {t('common.schedule')}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-4 w-4" /> Edit
+              <Pencil className="h-4 w-4" /> {t('common.edit')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
               <Trash2 className="h-4 w-4 text-rose-500" />
@@ -113,18 +114,17 @@ export function ContactDetail() {
           </div>
         </div>
 
-        {/* Quick status changer */}
         <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-4">
-          <span className="text-xs font-medium text-slate-500">Move to stage:</span>
+          <span className="text-xs font-medium text-slate-500">{t('detail.move_to_stage')}</span>
           <Select
             className="w-52"
-            options={STATUS_OPTIONS}
+            options={optionsFor(t, STATUS_VALUES, 'enum.status')}
             value={contact.status}
             onChange={(e) =>
               updateContact.mutate(
                 { id: contact.id, payload: { status: e.target.value as never } },
                 {
-                  onSuccess: () => toast.success('Status updated'),
+                  onSuccess: () => toast.success(t('detail.status_updated')),
                   onError: (err) => toast.error(errorMessage(err)),
                 },
               )
@@ -134,37 +134,36 @@ export function ContactDetail() {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left: details */}
         <div className="space-y-6 lg:col-span-1">
           <Card className="p-5">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('detail.details')}</h2>
             <dl className="space-y-3 text-sm">
-              <DetailRow icon={<Mail className="h-4 w-4" />} label="Email">
+              <DetailRow icon={<Mail className="h-4 w-4" />} label={t('detail.email')}>
                 {contact.email ? (
                   <a href={`mailto:${contact.email}`} className="text-brand-600 hover:underline">{contact.email}</a>
                 ) : '—'}
               </DetailRow>
-              <DetailRow icon={<Phone className="h-4 w-4" />} label="Phone">
+              <DetailRow icon={<Phone className="h-4 w-4" />} label={t('detail.phone')}>
                 {contact.phone ?? '—'}
               </DetailRow>
-              <DetailRow icon={<Linkedin className="h-4 w-4" />} label="LinkedIn">
+              <DetailRow icon={<Linkedin className="h-4 w-4" />} label={t('detail.linkedin')}>
                 {contact.linkedin_url ? (
                   <a href={contact.linkedin_url} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
-                    Profile
+                    {t('detail.profile')}
                   </a>
                 ) : '—'}
               </DetailRow>
-              <DetailRow icon={<CalendarClock className="h-4 w-4" />} label="Last contacted">
+              <DetailRow icon={<CalendarClock className="h-4 w-4" />} label={t('detail.last_contacted')}>
                 {fromNow(contact.last_contacted_at)}
               </DetailRow>
             </dl>
 
             {contact.tags.length > 0 && (
               <div className="mt-4">
-                <p className="mb-1.5 text-xs font-medium text-slate-500">Tags</p>
+                <p className="mb-1.5 text-xs font-medium text-slate-500">{t('detail.tags')}</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {contact.tags.map((t) => (
-                    <span key={t} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{t}</span>
+                  {contact.tags.map((tag) => (
+                    <span key={tag} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -173,33 +172,32 @@ export function ContactDetail() {
 
           {(contact.next_action || contact.next_action_date) && (
             <Card className="border-amber-200 bg-amber-50/60 p-5">
-              <h2 className="mb-1 text-sm font-semibold text-amber-800">Next action</h2>
+              <h2 className="mb-1 text-sm font-semibold text-amber-800">{t('detail.next_action')}</h2>
               <p className="text-sm text-amber-900">{contact.next_action ?? '—'}</p>
               {contact.next_action_date && (
-                <p className="mt-1 text-xs font-medium text-amber-700">Due {formatDate(contact.next_action_date)}</p>
+                <p className="mt-1 text-xs font-medium text-amber-700">{t('detail.due', { date: formatDate(contact.next_action_date) })}</p>
               )}
             </Card>
           )}
 
           {contact.notes && (
             <Card className="p-5">
-              <h2 className="mb-2 text-sm font-semibold text-slate-900">Notes</h2>
+              <h2 className="mb-2 text-sm font-semibold text-slate-900">{t('detail.notes')}</h2>
               <p className="whitespace-pre-wrap text-sm text-slate-600">{contact.notes}</p>
             </Card>
           )}
         </div>
 
-        {/* Right: events + interactions */}
         <div className="space-y-6 lg:col-span-2">
           <Card className="p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">Upcoming events</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t('detail.upcoming_events')}</h2>
               <Button size="sm" variant="secondary" onClick={() => setEventOpen(true)}>
-                <CalendarPlus className="h-4 w-4" /> Schedule
+                <CalendarPlus className="h-4 w-4" /> {t('common.schedule')}
               </Button>
             </div>
             {upcomingEvents.length === 0 ? (
-              <p className="py-4 text-center text-sm text-slate-400">No upcoming events.</p>
+              <p className="py-4 text-center text-sm text-slate-400">{t('detail.no_upcoming')}</p>
             ) : (
               <ul className="space-y-3">
                 {upcomingEvents.map((ev) => (
@@ -222,10 +220,10 @@ export function ContactDetail() {
                       onClick={() =>
                         deleteEvent.mutate(
                           { id: ev.id, contactId: contact.id },
-                          { onSuccess: () => toast.success('Event removed') },
+                          { onSuccess: () => toast.success(t('detail.event_removed')) },
                         )
                       }
-                      aria-label="Delete event"
+                      aria-label={t('common.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -237,16 +235,16 @@ export function ContactDetail() {
 
           <Card className="p-5">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">Interaction history</h2>
+              <h2 className="text-sm font-semibold text-slate-900">{t('detail.interaction_history')}</h2>
               <Button size="sm" onClick={() => setInteractionOpen(true)}>
-                <MessageSquarePlus className="h-4 w-4" /> Log
+                <MessageSquarePlus className="h-4 w-4" /> {t('common.log')}
               </Button>
             </div>
             {interactions.length === 0 ? (
               <EmptyState
                 icon={<MessageSquarePlus className="h-7 w-7" />}
-                title="No interactions yet"
-                description="Log your first touch to start building the history."
+                title={t('detail.no_interactions_title')}
+                description={t('detail.no_interactions_desc')}
               />
             ) : (
               <ol className="relative space-y-5 border-l border-slate-200 pl-5">
@@ -264,7 +262,7 @@ export function ContactDetail() {
                         {it.content && <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{it.content}</p>}
                         {it.outcome && (
                           <p className="mt-1 text-sm text-slate-500">
-                            <span className="font-medium text-slate-600">Outcome:</span> {it.outcome}
+                            <span className="font-medium text-slate-600">{t('detail.outcome')}</span> {it.outcome}
                           </p>
                         )}
                       </div>
@@ -273,10 +271,10 @@ export function ContactDetail() {
                         onClick={() =>
                           deleteInteraction.mutate(
                             { id: it.id, contactId: contact.id },
-                            { onSuccess: () => toast.success('Interaction removed') },
+                            { onSuccess: () => toast.success(t('detail.interaction_removed')) },
                           )
                         }
-                        aria-label="Delete interaction"
+                        aria-label={t('common.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -289,7 +287,7 @@ export function ContactDetail() {
 
           {pastEvents.length > 0 && (
             <Card className="p-5">
-              <h2 className="mb-3 text-sm font-semibold text-slate-900">Past events</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('detail.past_events')}</h2>
               <ul className="space-y-2">
                 {pastEvents.map((ev) => (
                   <li key={ev.id} className="flex items-center justify-between gap-3 text-sm">
@@ -306,8 +304,7 @@ export function ContactDetail() {
         </div>
       </div>
 
-      {/* Modals */}
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit contact" size="lg">
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={t('detail.edit_contact')} size="lg">
         <ContactForm
           initial={contact}
           loading={updateContact.isPending}
@@ -317,7 +314,7 @@ export function ContactDetail() {
               { id: contact.id, payload },
               {
                 onSuccess: () => {
-                  toast.success('Contact updated')
+                  toast.success(t('detail.contact_updated'))
                   setEditOpen(false)
                 },
                 onError: (err) => toast.error(errorMessage(err)),
@@ -327,7 +324,7 @@ export function ContactDetail() {
         />
       </Modal>
 
-      <Modal open={interactionOpen} onClose={() => setInteractionOpen(false)} title="Log interaction">
+      <Modal open={interactionOpen} onClose={() => setInteractionOpen(false)} title={t('detail.log_interaction')}>
         <InteractionForm
           loading={createInteraction.isPending}
           onCancel={() => setInteractionOpen(false)}
@@ -336,7 +333,7 @@ export function ContactDetail() {
               { contactId: contact.id, payload },
               {
                 onSuccess: () => {
-                  toast.success('Interaction logged')
+                  toast.success(t('detail.interaction_logged'))
                   setInteractionOpen(false)
                 },
                 onError: (err) => toast.error(errorMessage(err)),
@@ -346,7 +343,7 @@ export function ContactDetail() {
         />
       </Modal>
 
-      <Modal open={eventOpen} onClose={() => setEventOpen(false)} title="Schedule event" size="lg">
+      <Modal open={eventOpen} onClose={() => setEventOpen(false)} title={t('detail.schedule_event')} size="lg">
         <EventForm
           defaultContactId={contact.id}
           lockContact
@@ -355,7 +352,7 @@ export function ContactDetail() {
           onSubmit={(payload) =>
             createEvent.mutate(payload, {
               onSuccess: () => {
-                toast.success('Event scheduled')
+                toast.success(t('detail.event_scheduled'))
                 setEventOpen(false)
               },
               onError: (err) => toast.error(errorMessage(err)),
@@ -366,14 +363,15 @@ export function ContactDetail() {
 
       <ConfirmDialog
         open={confirmDelete}
-        title="Delete contact"
-        message={`This permanently deletes ${contact.full_name} along with all their interactions and events.`}
+        title={t('detail.delete_title')}
+        message={t('detail.delete_message', { name: contact.full_name })}
+        confirmLabel={t('common.delete')}
         loading={deleteContact.isPending}
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() =>
           deleteContact.mutate(contact.id, {
             onSuccess: () => {
-              toast.success('Contact deleted')
+              toast.success(t('detail.contact_deleted'))
               navigate('/contacts')
             },
             onError: (err) => toast.error(errorMessage(err)),
@@ -384,10 +382,10 @@ export function ContactDetail() {
   )
 }
 
-function BackLink() {
+function BackLink({ label }: { label: string }) {
   return (
     <Link to="/contacts" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
-      <ArrowLeft className="h-4 w-4" /> Back to contacts
+      <ArrowLeft className="h-4 w-4" /> {label}
     </Link>
   )
 }

@@ -19,11 +19,13 @@ import { PriorityBadge, SourceBadge } from '../components/Badges'
 import { ContactForm } from '../components/ContactForm'
 import { PageHeader } from '../components/PageHeader'
 import { Button, ErrorState, LoadingState, Modal } from '../components/ui'
-import { PIPELINE_STATUSES, STATUS_META } from '../lib/constants'
+import { useI18n, type TFunc } from '../i18n'
+import { PIPELINE_STATUSES, STATUS_STYLES } from '../lib/constants'
 import { initials } from '../lib/utils'
 import type { Contact, ContactStatus } from '../types'
 
 export function Pipeline() {
+  const { t } = useI18n()
   const { data: contacts, isLoading, isError, error } = useContacts({ sort: '-updated_at' })
   const updateContact = useUpdateContact()
   const createContact = useCreateContact()
@@ -35,9 +37,8 @@ export function Pipeline() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const grouped = useMemo(() => {
-    const map: Record<ContactStatus, Contact[]> = Object.fromEntries(
-      PIPELINE_STATUSES.map((s) => [s, []]),
-    ) as Record<ContactStatus, Contact[]>
+    const map = {} as Record<ContactStatus, Contact[]>
+    for (const s of PIPELINE_STATUSES) map[s] = []
     for (const c of contacts ?? []) map[c.status]?.push(c)
     return map
   }, [contacts])
@@ -59,7 +60,7 @@ export function Pipeline() {
     updateContact.mutate(
       { id: contact.id, payload: { status: target } },
       {
-        onSuccess: () => toast.success(`Moved to “${STATUS_META[target].label}”`),
+        onSuccess: () => toast.success(t('pipeline.moved_to', { stage: t(`enum.status.${target}`) })),
         onError: (err) => toast.error(errorMessage(err)),
       },
     )
@@ -68,17 +69,17 @@ export function Pipeline() {
   return (
     <div>
       <PageHeader
-        title="Pipeline"
-        subtitle="Drag leads between stages to update their status."
+        title={t('pipeline.title')}
+        subtitle={t('pipeline.subtitle')}
         actions={
           <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> New contact
+            <Plus className="h-4 w-4" /> {t('common.new_contact')}
           </Button>
         }
       />
 
       {isLoading && <LoadingState />}
-      {isError && <ErrorState message={errorMessage(error, 'Could not load pipeline')} />}
+      {isError && <ErrorState message={errorMessage(error, t('pipeline.error'))} />}
 
       {contacts && (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -88,24 +89,23 @@ export function Pipeline() {
                 key={status}
                 status={status}
                 contacts={grouped[status]}
+                t={t}
                 onCardClick={(id) => navigate(`/contacts/${id}`)}
               />
             ))}
           </div>
-          <DragOverlay>
-            {activeContact ? <CardBody contact={activeContact} dragging /> : null}
-          </DragOverlay>
+          <DragOverlay>{activeContact ? <CardBody contact={activeContact} dragging /> : null}</DragOverlay>
         </DndContext>
       )}
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New contact" size="lg">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={t('common.new_contact')} size="lg">
         <ContactForm
           loading={createContact.isPending}
           onCancel={() => setCreateOpen(false)}
           onSubmit={(payload) =>
             createContact.mutate(payload, {
               onSuccess: () => {
-                toast.success('Contact created')
+                toast.success(t('contacts.created'))
                 setCreateOpen(false)
               },
               onError: (err) => toast.error(errorMessage(err)),
@@ -120,23 +120,24 @@ export function Pipeline() {
 function Column({
   status,
   contacts,
+  t,
   onCardClick,
 }: {
   status: ContactStatus
   contacts: Contact[]
+  t: TFunc
   onCardClick: (id: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status })
-  const meta = STATUS_META[status]
 
   return (
     <div className="flex w-72 shrink-0 flex-col">
       <div className="mb-2 flex items-center justify-between px-1">
         <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs ring-1 ring-inset ${meta.badge}`}>
+          <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs ring-1 ring-inset ${STATUS_STYLES[status]}`}>
             {contacts.length}
           </span>
-          {meta.label}
+          {t(`enum.status.${status}`)}
         </span>
       </div>
       <div
@@ -148,9 +149,7 @@ function Column({
         {contacts.map((c) => (
           <DraggableCard key={c.id} contact={c} onClick={() => onCardClick(c.id)} />
         ))}
-        {contacts.length === 0 && (
-          <p className="px-2 py-6 text-center text-xs text-slate-400">Drop here</p>
-        )}
+        {contacts.length === 0 && <p className="px-2 py-6 text-center text-xs text-slate-400">{t('pipeline.drop_here')}</p>}
       </div>
     </div>
   )

@@ -6,17 +6,21 @@ import {
   Trello,
 } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useI18n } from '../i18n'
 import { cn } from '../lib/utils'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/pipeline', label: 'Pipeline', icon: Trello, end: false },
-  { to: '/contacts', label: 'Contacts', icon: Contact2, end: false },
-  { to: '/calendar', label: 'Calendar', icon: CalendarDays, end: false },
-  { to: '/agenda', label: 'Today / Agenda', icon: ListChecks, end: false },
-]
+  { to: '/', key: 'dashboard', icon: LayoutDashboard, end: true },
+  { to: '/pipeline', key: 'pipeline', icon: Trello, end: false },
+  { to: '/contacts', key: 'contacts', icon: Contact2, end: false },
+  { to: '/calendar', key: 'calendar', icon: CalendarDays, end: false },
+  { to: '/agenda', key: 'agenda', icon: ListChecks, end: false },
+] as const
 
 export function Layout() {
+  const { t } = useI18n()
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 lg:flex">
@@ -45,11 +49,14 @@ export function Layout() {
               }
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {t(`nav.${item.key}`)}
             </NavLink>
           ))}
         </nav>
-        <p className="px-3 text-xs text-slate-400">Personal CRM · single user</p>
+        <div className="mt-4 space-y-3">
+          <LanguageSwitcher />
+          <p className="px-2 text-xs text-slate-400">{t('nav.tagline')}</p>
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -68,9 +75,12 @@ export function Layout() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              {t(`nav.${item.key}`)}
             </NavLink>
           ))}
+          <div className="ml-auto shrink-0 pl-2">
+            <LanguageSwitcher compact />
+          </div>
         </header>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

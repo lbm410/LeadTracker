@@ -7,6 +7,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
+import { useI18n } from '../i18n'
 import { cn } from '../lib/utils'
 
 // --- Button ---------------------------------------------------------------
@@ -172,6 +173,7 @@ export function Modal({
   children: ReactNode
   size?: 'md' | 'lg'
 }) {
+  const { t } = useI18n()
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 sm:p-8">
@@ -191,7 +193,7 @@ export function Modal({
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -208,10 +210,11 @@ export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn('h-5 w-5 animate-spin text-brand-600', className)} />
 }
 
-export function LoadingState({ label = 'Loading…' }: { label?: string }) {
+export function LoadingState({ label }: { label?: string }) {
+  const { t } = useI18n()
   return (
     <div className="flex items-center justify-center gap-2 py-12 text-sm text-slate-500">
-      <Spinner /> {label}
+      <Spinner /> {label ?? t('common.loading')}
     </div>
   )
 }

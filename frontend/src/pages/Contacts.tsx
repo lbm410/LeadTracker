@@ -1,5 +1,5 @@
 import { Plus, Search, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import { errorMessage } from '../api/client'
@@ -8,29 +8,30 @@ import { PriorityBadge, SourceBadge, StatusBadge } from '../components/Badges'
 import { ContactForm } from '../components/ContactForm'
 import { PageHeader } from '../components/PageHeader'
 import { Button, Card, EmptyState, ErrorState, Input, LoadingState, Modal, Select } from '../components/ui'
-import {
-  PRIORITY_OPTIONS,
-  SOURCE_OPTIONS,
-  STATUS_OPTIONS,
-} from '../lib/constants'
+import { optionsFor, useI18n } from '../i18n'
+import { PRIORITY_VALUES, SOURCE_VALUES, STATUS_VALUES } from '../lib/constants'
 import { fromNow, initials } from '../lib/utils'
 import type { ContactFilters } from '../types'
 
-const SORT_OPTIONS = [
-  { value: '-updated_at', label: 'Recently updated' },
-  { value: 'full_name', label: 'Name (A–Z)' },
-  { value: '-full_name', label: 'Name (Z–A)' },
-  { value: '-created_at', label: 'Newest first' },
-  { value: '-last_contacted_at', label: 'Last contacted' },
-]
-
 export function Contacts() {
+  const { t } = useI18n()
   const [filters, setFilters] = useState<ContactFilters>({ sort: '-updated_at' })
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
 
   const { data: contacts, isLoading, isError, error } = useContacts(filters)
   const createContact = useCreateContact()
+
+  const sortOptions = useMemo(
+    () => [
+      { value: '-updated_at', label: t('contacts.sort.updated') },
+      { value: 'full_name', label: t('contacts.sort.name_az') },
+      { value: '-full_name', label: t('contacts.sort.name_za') },
+      { value: '-created_at', label: t('contacts.sort.newest') },
+      { value: '-last_contacted_at', label: t('contacts.sort.last_contacted') },
+    ],
+    [t],
+  )
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault()
@@ -44,11 +45,11 @@ export function Contacts() {
   return (
     <div>
       <PageHeader
-        title="Contacts"
-        subtitle="All your leads in one searchable list."
+        title={t('contacts.title')}
+        subtitle={t('contacts.subtitle')}
         actions={
           <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> New contact
+            <Plus className="h-4 w-4" /> {t('common.new_contact')}
           </Button>
         }
       />
@@ -59,31 +60,31 @@ export function Contacts() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               className="pl-9"
-              placeholder="Search name, company, email…"
+              placeholder={t('contacts.search_placeholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </form>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Select options={STATUS_OPTIONS} placeholder="All statuses" value={filters.status ?? ''} onChange={(e) => update('status', e.target.value)} />
-            <Select options={SOURCE_OPTIONS} placeholder="All sources" value={filters.source ?? ''} onChange={(e) => update('source', e.target.value)} />
-            <Select options={PRIORITY_OPTIONS} placeholder="All priorities" value={filters.priority ?? ''} onChange={(e) => update('priority', e.target.value)} />
-            <Select options={SORT_OPTIONS} value={filters.sort ?? '-updated_at'} onChange={(e) => update('sort', e.target.value)} />
+            <Select options={optionsFor(t, STATUS_VALUES, 'enum.status')} placeholder={t('contacts.all_statuses')} value={filters.status ?? ''} onChange={(e) => update('status', e.target.value)} />
+            <Select options={optionsFor(t, SOURCE_VALUES, 'enum.source')} placeholder={t('contacts.all_sources')} value={filters.source ?? ''} onChange={(e) => update('source', e.target.value)} />
+            <Select options={optionsFor(t, PRIORITY_VALUES, 'enum.priority')} placeholder={t('contacts.all_priorities')} value={filters.priority ?? ''} onChange={(e) => update('priority', e.target.value)} />
+            <Select options={sortOptions} value={filters.sort ?? '-updated_at'} onChange={(e) => update('sort', e.target.value)} />
           </div>
         </div>
       </Card>
 
       {isLoading && <LoadingState />}
-      {isError && <ErrorState message={errorMessage(error, 'Could not load contacts')} />}
+      {isError && <ErrorState message={errorMessage(error, t('contacts.error'))} />}
 
       {contacts && contacts.length === 0 && (
         <EmptyState
           icon={<Users className="h-8 w-8" />}
-          title="No contacts found"
-          description="Adjust your filters, or add your first lead to get started."
+          title={t('contacts.empty_title')}
+          description={t('contacts.empty_desc')}
           action={
             <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4" /> New contact
+              <Plus className="h-4 w-4" /> {t('common.new_contact')}
             </Button>
           }
         />
@@ -95,12 +96,12 @@ export function Contacts() {
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Priority</th>
-                  <th className="px-4 py-3">Source</th>
-                  <th className="px-4 py-3">Tags</th>
-                  <th className="px-4 py-3">Last contact</th>
+                  <th className="px-4 py-3">{t('contacts.col_name')}</th>
+                  <th className="px-4 py-3">{t('contacts.col_status')}</th>
+                  <th className="px-4 py-3">{t('contacts.col_priority')}</th>
+                  <th className="px-4 py-3">{t('contacts.col_source')}</th>
+                  <th className="px-4 py-3">{t('contacts.col_tags')}</th>
+                  <th className="px-4 py-3">{t('contacts.col_last_contact')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -124,8 +125,8 @@ export function Contacts() {
                     <td className="px-4 py-3"><SourceBadge source={c.source} /></td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {c.tags.slice(0, 3).map((t) => (
-                          <span key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">{t}</span>
+                        {c.tags.slice(0, 3).map((tag) => (
+                          <span key={tag} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">{tag}</span>
                         ))}
                         {c.tags.length > 3 && <span className="text-xs text-slate-400">+{c.tags.length - 3}</span>}
                       </div>
@@ -139,14 +140,14 @@ export function Contacts() {
         </Card>
       )}
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New contact" size="lg">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={t('common.new_contact')} size="lg">
         <ContactForm
           loading={createContact.isPending}
           onCancel={() => setCreateOpen(false)}
           onSubmit={(payload) =>
             createContact.mutate(payload, {
               onSuccess: () => {
-                toast.success('Contact created')
+                toast.success(t('contacts.created'))
                 setCreateOpen(false)
               },
               onError: (err) => toast.error(errorMessage(err)),

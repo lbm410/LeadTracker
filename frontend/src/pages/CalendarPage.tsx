@@ -1,9 +1,9 @@
-import interactionPlugin from '@fullcalendar/interaction'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
 import type { DatesSetArg, EventClickArg, EventInput as FcEventInput } from '@fullcalendar/core'
-import type { DateClickArg } from '@fullcalendar/interaction'
+import esLocale from '@fullcalendar/core/locales/es'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin, { type DateClickArg } from '@fullcalendar/interaction'
+import FullCalendar from '@fullcalendar/react'
+import timeGridPlugin from '@fullcalendar/timegrid'
 import { addDays, subDays } from 'date-fns'
 import { ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -14,10 +14,12 @@ import { useCalendarItems, useCreateEvent, useDeleteEvent, useEvent, useUpdateEv
 import { EventForm } from '../components/EventForm'
 import { PageHeader } from '../components/PageHeader'
 import { Button, Card, LoadingState, Modal } from '../components/ui'
-import { EVENT_TYPE_META } from '../lib/constants'
-import type { CalendarItem } from '../types'
+import { useI18n } from '../i18n'
+import { EVENT_TYPE_COLOR, EVENT_TYPE_VALUES } from '../lib/constants'
+import type { CalendarItem, EventInput } from '../types'
 
 export function CalendarPage() {
+  const { t, lang } = useI18n()
   const navigate = useNavigate()
   const now = new Date()
   const [range, setRange] = useState({
@@ -37,7 +39,7 @@ export function CalendarPage() {
   const fcEvents = useMemo<FcEventInput[]>(
     () =>
       items.map((item) => {
-        const color = EVENT_TYPE_META[item.event_type].color ?? '#4f46e5'
+        const color = EVENT_TYPE_COLOR[item.event_type] ?? '#4f46e5'
         const cancelled = item.status === 'cancelled'
         return {
           id: item.id,
@@ -55,7 +57,12 @@ export function CalendarPage() {
   )
 
   function handleDatesSet(arg: DatesSetArg) {
-    setRange({ start: arg.start.toISOString(), end: arg.end.toISOString() })
+    const start = arg.start.toISOString()
+    const end = arg.end.toISOString()
+    // Only update when the visible range actually changes. Returning the
+    // previous state lets React bail out, breaking FullCalendar's re-render →
+    // datesSet → setState loop ("Maximum update depth exceeded").
+    setRange((prev) => (prev.start === start && prev.end === end ? prev : { start, end }))
   }
 
   function handleDateClick(arg: DateClickArg) {
@@ -75,8 +82,8 @@ export function CalendarPage() {
   return (
     <div>
       <PageHeader
-        title="Calendar"
-        subtitle="Meetings, calls and reminders — plus implicit next-action due dates."
+        title={t('calendar.title')}
+        subtitle={t('calendar.subtitle')}
         actions={
           <Button
             onClick={() => {
@@ -84,7 +91,7 @@ export function CalendarPage() {
               setCreateOpen(true)
             }}
           >
-            <Plus className="h-4 w-4" /> New event
+            <Plus className="h-4 w-4" /> {t('calendar.new_event')}
           </Button>
         }
       />
@@ -101,6 +108,8 @@ export function CalendarPage() {
           }}
           height="auto"
           firstDay={1}
+          locale={lang}
+          locales={[esLocale]}
           nowIndicator
           dayMaxEvents={3}
           events={fcEvents}
@@ -112,8 +121,7 @@ export function CalendarPage() {
 
       <Legend />
 
-      {/* Create */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New event" size="lg">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={t('calendar.new_event')} size="lg">
         <EventForm
           defaultStart={createStart}
           loading={createEvent.isPending}
@@ -121,7 +129,7 @@ export function CalendarPage() {
           onSubmit={(payload) =>
             createEvent.mutate(payload, {
               onSuccess: () => {
-                toast.success('Event created')
+                toast.success(t('calendar.created'))
                 setCreateOpen(false)
               },
               onError: (err) => toast.error(errorMessage(err)),
@@ -130,7 +138,6 @@ export function CalendarPage() {
         />
       </Modal>
 
-      {/* Edit */}
       {editId && (
         <EditEventModal
           eventId={editId}
@@ -140,7 +147,7 @@ export function CalendarPage() {
               { id: editId, payload },
               {
                 onSuccess: () => {
-                  toast.success('Event updated')
+                  toast.success(t('calendar.updated'))
                   setEditId(null)
                 },
                 onError: (err) => toast.error(errorMessage(err)),
@@ -153,7 +160,7 @@ export function CalendarPage() {
               { id: editId, contactId },
               {
                 onSuccess: () => {
-                  toast.success('Event deleted')
+                  toast.success(t('calendar.deleted'))
                   setEditId(null)
                 },
                 onError: (err) => toast.error(errorMessage(err)),
@@ -177,15 +184,16 @@ function EditEventModal({
 }: {
   eventId: string
   onClose: () => void
-  onSave: (payload: import('../types').EventInput) => void
+  onSave: (payload: EventInput) => void
   saving: boolean
   onDelete: (contactId: string | null) => void
   deleting: boolean
 }) {
+  const { t } = useI18n()
   const { data: event, isLoading } = useEvent(eventId)
 
   return (
-    <Modal open onClose={onClose} title="Event details" size="lg">
+    <Modal open onClose={onClose} title={t('calendar.event_details')} size="lg">
       {isLoading || !event ? (
         <LoadingState />
       ) : (
@@ -196,10 +204,10 @@ function EditEventModal({
                 <ExternalLink className="h-4 w-4" /> {event.contact.full_name}
               </Link>
             ) : (
-              <span className="text-sm text-slate-400">No linked contact</span>
+              <span className="text-sm text-slate-400">{t('calendar.no_linked_contact')}</span>
             )}
             <Button size="sm" variant="ghost" loading={deleting} onClick={() => onDelete(event.contact_id)}>
-              <Trash2 className="h-4 w-4 text-rose-500" /> Delete
+              <Trash2 className="h-4 w-4 text-rose-500" /> {t('common.delete')}
             </Button>
           </div>
           <EventForm initial={event} loading={saving} onCancel={onClose} onSubmit={onSave} />
@@ -210,12 +218,13 @@ function EditEventModal({
 }
 
 function Legend() {
+  const { t } = useI18n()
   return (
     <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-      {Object.entries(EVENT_TYPE_META).map(([key, meta]) => (
-        <span key={key} className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: meta.color }} />
-          {meta.label}
+      {EVENT_TYPE_VALUES.map((type) => (
+        <span key={type} className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: EVENT_TYPE_COLOR[type] }} />
+          {t(`enum.event_type.${type}`)}
         </span>
       ))}
     </div>

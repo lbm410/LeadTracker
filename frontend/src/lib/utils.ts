@@ -1,8 +1,17 @@
 import { clsx, type ClassValue } from 'clsx'
-import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
+import { format, formatDistanceToNow, isValid, parseISO, type Locale } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 export function cn(...inputs: ClassValue[]): string {
   return clsx(inputs)
+}
+
+// Module-level locale used by all date helpers. Updated by the i18n provider
+// so plain (non-hook) formatters stay localized without threading a locale arg.
+let dateLocale: Locale | undefined
+
+export function setDateLocale(lang: 'en' | 'es'): void {
+  dateLocale = lang === 'es' ? es : undefined
 }
 
 /** Parse an ISO string safely; returns null if invalid/empty. */
@@ -14,22 +23,22 @@ function parse(value: string | null | undefined): Date | null {
 
 export function formatDate(value: string | null | undefined): string {
   const d = parse(value)
-  return d ? format(d, 'd MMM yyyy') : '—'
+  return d ? format(d, 'd MMM yyyy', { locale: dateLocale }) : '—'
 }
 
 export function formatDateTime(value: string | null | undefined): string {
   const d = parse(value)
-  return d ? format(d, "d MMM yyyy · HH:mm") : '—'
+  return d ? format(d, "d MMM yyyy · HH:mm", { locale: dateLocale }) : '—'
 }
 
 export function formatTime(value: string | null | undefined): string {
   const d = parse(value)
-  return d ? format(d, 'HH:mm') : '—'
+  return d ? format(d, 'HH:mm', { locale: dateLocale }) : '—'
 }
 
 export function fromNow(value: string | null | undefined): string {
   const d = parse(value)
-  return d ? formatDistanceToNow(d, { addSuffix: true }) : '—'
+  return d ? formatDistanceToNow(d, { addSuffix: true, locale: dateLocale }) : '—'
 }
 
 /** Convert an ISO datetime to a value usable by <input type="datetime-local">. */
